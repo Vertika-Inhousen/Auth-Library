@@ -1,9 +1,10 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const AuthLibrary = require("./auth"); // Import your auth package
+const AuthLibrary = require("./auth");
 
 const app = express();
 app.use(bodyParser.json());
+// Sample Usage
 const secret_key =
   "00c59c72478aa026294f74ad38e4adffbf49184370c806aa523c84b3f9ac926ebcdf454fb88b8ba73a07a4e3450d00d8e2a7405430544eb1dd2be17cc8486b5e";
 
