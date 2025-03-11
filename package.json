@@ -1,11 +1,17 @@
 {
   "name": "all-in-one-auth-library",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["auth", "login", "register", "jwt", "authentication"],
+  "keywords": [
+    "auth",
+    "login",
+    "register",
+    "jwt",
+    "authentication"
+  ],
   "author": "Vertika",
   "license": "ISC",
   "description": "",
@@ -17,7 +23,7 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.13.1",
-    "mongoose": "^8.10.2",
+    "mongoose": "^8.12.1",
     "nodemailer": "^6.10.0",
     "nodemon": "^3.1.9",
     "sequelize": "^6.37.5"
