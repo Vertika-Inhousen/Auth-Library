@@ -6,15 +6,12 @@ import { secretKey } from "./config.js";
 
 const app = express();
 app.use(bodyParser.json());
-const secret_key = secretKey;
-
 // Sample Usage
 // connect and create DB Instance
 const dbInstance = await connectDB();
 
 // Library Options
 const options = {
-  secret_key: secret_key,
   lookuptable: "users",
 };
 // Initalise library 
