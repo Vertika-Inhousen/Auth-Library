@@ -1,13 +1,13 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { hashPassword } = require("../utils");
-
+const secret_key = '00c59c72478aa026294f74ad38e4adffbf49184370c806aa523c84b3f9ac926ebcdf454fb88b8ba73a07a4e3450d00d8e2a7405430544eb1dd2be17cc8486b5e';
 
 class AuthService {
   constructor(dbInstance, options) {
     this.dbInstance = dbInstance;
     this.encryptPassword = options?.encryptPassword ?? true;
-    this.secret_key = process.env.JWT_SECRET;
+    this.secret_key = process.env.JWT_SECRET||secret_key;
     this.saltRounds = options?.saltRounds ?? 10;
     (this.dbtype = dbInstance.dbtype),
       (this.lookupTable = dbInstance?.lookupTable);
@@ -79,12 +79,16 @@ class AuthService {
           message: "Invalid credentials- Incorrect Password",
           status: 400,
         };
+        console.log('this>>>>>',this.secret_key,process.env.JWT_SECRET)
       // Generate token
-      const token = jwt.sign({ id: user.id, email: user.email }, this.secret_key, {
-        expiresIn: "1h",
-      });
+      if(this.secret_key){
+        const token = jwt.sign({ id: user.id, email: user.email }, this.secret_key, {
+          expiresIn: "1h",
+        });
+        return { message: "Login successful", user, token, status: 200 };
 
-      return { message: "Login successful", user, token, status: 200 };
+      }
+
     } catch (error) {
       console.log("Error while login", error);
       throw new Error(`Login Error - ${error.message}`);
