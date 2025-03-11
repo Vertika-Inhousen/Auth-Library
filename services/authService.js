@@ -4,7 +4,6 @@ const { hashPassword } = require("../utils");
 const { secretKey } = require("../config");
 const secret_key = secretKey;
 
-
 class AuthService {
   constructor(dbInstance, options) {
     this.dbInstance = dbInstance;
@@ -36,7 +35,7 @@ class AuthService {
       if (existingUser) throw new Error("User already exists");
       // Encrypt password
       if (this.encryptPassword) {
-        userData.password = await hashPassword(password,this.saltRounds)
+        userData.password = await hashPassword(password, this.saltRounds);
       }
       // Save User in Database
       let newUser;
@@ -83,11 +82,9 @@ class AuthService {
           status: 400,
         };
       // Generate token
-      const token = jwt.sign(
-        { id: user.id, email: user.email },
-        this.secretKey,
-        { expiresIn: "1h" }
-      );
+      const token = jwt.sign({ id: user.id, email: user.email }, secretKey, {
+        expiresIn: "1h",
+      });
 
       return { message: "Login successful", user, token, status: 200 };
     } catch (error) {
