@@ -1,6 +1,5 @@
 const DBService = require("./services/dbService");
 const AuthService = require("./services/authService");
-const config = require("./config");
 
 class AuthLibrary {
   constructor(dbInstance, options) {

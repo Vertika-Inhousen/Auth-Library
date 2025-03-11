@@ -1,15 +1,13 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { hashPassword } = require("../utils");
-const { secretKey } = require("../config");
-const secret_key = secretKey;
+
 
 class AuthService {
   constructor(dbInstance, options) {
     this.dbInstance = dbInstance;
-    this.secretKey = dbInstance.secret_key;
     this.encryptPassword = options?.encryptPassword ?? true;
-    this.secret_key = secret_key;
+    this.secret_key = process.env.JWT_SECRET;
     this.saltRounds = options?.saltRounds ?? 10;
     (this.dbtype = dbInstance.dbtype),
       (this.lookupTable = dbInstance?.lookupTable);
@@ -82,7 +80,7 @@ class AuthService {
           status: 400,
         };
       // Generate token
-      const token = jwt.sign({ id: user.id, email: user.email }, secretKey, {
+      const token = jwt.sign({ id: user.id, email: user.email }, this.secret_key, {
         expiresIn: "1h",
       });
 
