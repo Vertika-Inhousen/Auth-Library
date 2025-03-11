@@ -2,7 +2,6 @@ import express from "express";
 import bodyParser from "body-parser";
 import connectDB from "./db.js";
 import AuthLibrary from "./server.js";
-import { secretKey } from "./config.js";
 
 const app = express();
 app.use(bodyParser.json());
