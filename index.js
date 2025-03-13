@@ -37,7 +37,7 @@ app.post("/login", async (req, res) => {
     const user = await auth.login({ email: email,password:password });
     return res
       .status(user?.status||500)
-      .json({ message: user?.message||'Network error', data: user?.user??[] });
+      .json({ message: user?.message||'Network error', data: user?.data });
   } catch (error) {
     console.log("Error logging in user", error);
     return res.status(500).json({ message: error?.message });
