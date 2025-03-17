@@ -1,10 +1,12 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { hashPassword } = require("../utils");
+
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { hashPassword, decryptPassword } from "../utils.js";
+import fs from "fs";
 const secret_key =
   "00c59c72478aa026294f74ad38e4adffbf49184370c806aa523c84b3f9ac926ebcdf454fb88b8ba73a07a4e3450d00d8e2a7405430544eb1dd2be17cc8486b5e";
 
-class AuthService {
+export default class AuthService {
   constructor(dbInstance, options) {
     this.dbInstance = dbInstance;
     this.encryptPassword = options?.encryptPassword ?? true;
@@ -18,6 +20,7 @@ class AuthService {
   async register(userData) {
     try {
       const { email, password } = userData;
+      const decryptedPassword = decryptPassword(password);
       //   Check for email and password
       if (!email || !password) {
         return { message: "Email and password are required", status: 400 };
@@ -34,7 +37,10 @@ class AuthService {
       if (existingUser) throw new Error("User already exists");
       // Encrypt password
       if (this.encryptPassword) {
-        userData.password = await hashPassword(password, this.saltRounds);
+        userData.password = await hashPassword(
+          decryptedPassword,
+          this.saltRounds
+        );
       }
       // Save User in Database
       let newUser;
@@ -52,7 +58,9 @@ class AuthService {
       }
       // Remove password manually before sending response
       if (newUser && newUser.password) {
-        usnewUserer = newUser.toObject ? user.toObject() : newUser.get({ plain: true }); // Convert to plain object
+        usnewUserer = newUser.toObject
+          ? user.toObject()
+          : newUser.get({ plain: true }); // Convert to plain object
         delete newUser.password; // Remove password field
       }
       return {
@@ -64,17 +72,17 @@ class AuthService {
       throw new Error(`Registration Error - ${error.message}`);
     }
   }
-
   //   Login Method
   async login(credentials) {
     const { email, password } = credentials;
+
     try {
       let user;
-
       //   Check for emial and password
       if (!email || !password) {
         return { message: "Email and password are required", status: 400 };
       }
+      const decryptedPassword = decryptPassword(password);
       // Find user
       if (this.dbtype === "mongo") {
         user = await this.dbInstance.User.findOne({ email });
@@ -85,7 +93,7 @@ class AuthService {
       if (!user)
         return { message: "Invalid credentials- User not found", status: 400 };
       // Check for password match
-      const isMatch = await bcrypt.compare(password, user.password);
+      const isMatch = await bcrypt.compare(decryptedPassword, user.password);
       if (!isMatch)
         return {
           message: "Invalid credentials- Incorrect Password",
@@ -119,6 +127,8 @@ class AuthService {
       throw new Error(`Login Error - ${error.message}`);
     }
   }
+  async generatePublicKey() {
+    const publicKeyPem = fs.readFileSync("public.pem", "utf8");
+    return publicKeyPem;
+  }
 }
-
-module.exports = AuthService;
