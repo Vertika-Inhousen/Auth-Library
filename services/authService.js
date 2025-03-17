@@ -1,7 +1,6 @@
-
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { hashPassword, decryptPassword } from "../utils.js";
+import { hashPassword, decryptPassword,encryptPassword } from "../utils.js";
 import fs from "fs";
 const secret_key =
   "00c59c72478aa026294f74ad38e4adffbf49184370c806aa523c84b3f9ac926ebcdf454fb88b8ba73a07a4e3450d00d8e2a7405430544eb1dd2be17cc8486b5e";
@@ -130,5 +129,16 @@ export default class AuthService {
   async generatePublicKey() {
     const publicKeyPem = fs.readFileSync("public.pem", "utf8");
     return publicKeyPem;
+  }
+  async getEncryptedPassword(password, publicKeyPem) {
+    
+    if (!publicKeyPem) {
+      throw new Error("Public Key is required for encryption");
+    }
+    if (!password) {
+      throw new Error("Password is required for encryption");
+    }
+    const encryptedPassword = encryptPassword(password, publicKeyPem);
+    return encryptedPassword;
   }
 }

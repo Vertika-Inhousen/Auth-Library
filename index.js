@@ -2,7 +2,6 @@ import express from "express";
 import bodyParser from "body-parser";
 import connectDB from "./db.js";
 import AuthLibrary from "./server.js";
-import { encryptPassword } from "./utils.js";
 
 const app = express();
 app.use(bodyParser.json());
@@ -24,8 +23,7 @@ app.post("/api/register", async (req, res) => {
   const { email, password } = req?.body;
 
   try {
-    const encryptedPassword = encryptPassword(password, publicKeyPem);
-    console.log("encryptedPassword", encryptedPassword);
+    const encryptedPassword = auth.encryptPassword(password, publicKeyPem);
     const user = await auth.register({
       email: email,
       password: encryptedPassword,
@@ -43,7 +41,7 @@ app.post("/api/register", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   const { email, password } = req?.body;
   try {
-    const encryptedPassword = encryptPassword(password, publicKeyPem);
+    const encryptedPassword = await auth.encryptPassword(password, publicKeyPem)
     const user = await auth.login({
       email: email,
       password: encryptedPassword,

@@ -21,5 +21,8 @@ import AuthService from './services/authService.js'
   async generatePublicKey (){
     return this.authService.generatePublicKey()
   }
+  async encryptPassword (password,publicKeyPem) {
+    return this.authService.getEncryptedPassword(password,publicKeyPem)
+  }
 }
 
