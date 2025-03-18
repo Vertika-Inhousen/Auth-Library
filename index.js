@@ -23,7 +23,10 @@ app.post("/api/register", async (req, res) => {
   const { email, password } = req?.body;
 
   try {
-    const encryptedPassword = auth.encryptPassword(password, publicKeyPem);
+    if(!publicKeyPem){
+      return res.status(500).json({ message: "Public Key not found" });
+    }
+    const encryptedPassword = await auth.encryptPassword(password, publicKeyPem);
     const user = await auth.register({
       email: email,
       password: encryptedPassword,
@@ -41,6 +44,9 @@ app.post("/api/register", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   const { email, password } = req?.body;
   try {
+    if(!publicKeyPem){
+      return res.status(500).json({ message: "Public Key not found" });
+    }
     const encryptedPassword = await auth.encryptPassword(password, publicKeyPem)
     const user = await auth.login({
       email: email,
