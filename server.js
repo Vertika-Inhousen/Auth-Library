@@ -1,15 +1,16 @@
 import express from "express";
 import bodyParser from "body-parser";
-import connectDB from "./db.js";
+import { connectSQLDB,connectDB } from "./db.js";
 import AuthLibrary from "./index.js";
 
 const app = express();
 app.use(bodyParser.json());
 // Sample Usage
 // connect and create DB Instance
-const dbInstance = await connectDB();
+// const dbInstance = await connectDB();
+const dbInstance = await connectSQLDB();
 let publicKeyPem;
-
+console.log('database',dbInstance)
 // Library Options
 const options = {
   lookuptable: "users",
@@ -67,6 +68,10 @@ app.get("/api/public-key", async(req, res) => {
   publicKeyPem = publicKey;
   res.json({ publicKey: publicKey,status:200 });
 });
+
+app.get('/',(req,res)=>{
+  res.send('Welcome!')
+})
 
 // ✅ Start Server
 const PORT = process.env.PORT || 5000;

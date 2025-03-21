@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const { Sequelize } = require("sequelize");
 const createMongoUserModel = require("../models/mongooseModel");
 const createSQLUserModel = require("../models/sequelizeModel");
+const { Pool } = require("pg");
 
 class DBService {
   static instance = null; // Static variable to store the singleton instance
@@ -36,21 +37,22 @@ class DBService {
       if (!this.lookuptable) {
         throw new Error("lookuptable is required for database initialization");
       }
-
       if (this.dbInstance?.connection?.client) {
         console.log("✅ Connected to MongoDB");
         this.dbtype = "mongo";
         this.User = createMongoUserModel(this.lookuptable);
-      } else if (this.dbInstance?.client?.config) {
-        console.log("✅ Connected to SQL Database:", this.dbInstance.client.config.client);
+      } else if (this.dbInstance?.config) {
+        console.log("✅ Connected to SQL Database:", this.dbInstance?.config);
         this.dbtype = "sql";
-
+        if (!this.dbInstance.dialect) {
+          throw Error("Dialect is required");
+        }
         this.sequelize = new Sequelize(
-          this.dbInstance.config.database,
-          this.dbInstance.config.username,
-          this.dbInstance.config.password,
+          this.dbInstance?.config.database,
+          this.dbInstance?.config?.username || this.dbInstance?.config?.user,
+          this.dbInstance?.config?.password,
           {
-            host: this.dbInstance.config.host,
+            host: this.dbInstance?.config?.host,
             dialect: this.dbInstance.dialect,
           }
         );

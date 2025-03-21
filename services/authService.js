@@ -51,7 +51,7 @@ export default class AuthService {
       } else if (this.dbtype === "sql") {
         newUser = await this.dbInstance.User.create(userData);
         newUser = await this.dbInstance.User.findOne({
-          where: { id: newUser.id },
+          where: { email: newUser.email },
           attributes: { exclude: ["password"] }, // Exclude password
         });
       }
