@@ -1,6 +1,4 @@
-// const DBService = require("./services/dbService");
 import DBService from "./services/dbService.js"
-// const AuthService = require("./services/authService");
 import AuthService from './services/authService.js'
 
  export default class AuthLibrary {
