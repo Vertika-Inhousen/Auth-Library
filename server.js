@@ -10,14 +10,12 @@ app.use(bodyParser.json());
 // const dbInstance = await connectDB();
 const dbInstance = await connectSQLDB();
 let publicKeyPem;
-console.log('database',dbInstance)
 // Library Options
 const options = {
   lookuptable: "users",
 };
 // Initalise library
 const auth = new AuthLibrary(dbInstance, options);
-
 
 // Sample Register API
 app.post("/api/register", async (req, res) => {
