@@ -1,35 +1,51 @@
-const { Sequelize, DataTypes } = require("sequelize");
+import { DataTypes } from "sequelize";
 
-const createSQLUserModel = (sequelize) => {
-  return sequelize.define(
-    "User", // Sequelize model name
+const createSQLUserModel = (sequelize, table) => {
+  const User = sequelize.define(
+    "User",
     {
       id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
+        allowNull: false,
       },
       email: {
         type: DataTypes.STRING,
         allowNull: false,
         unique: true,
         validate: {
-          isEmail: true, // Ensures it's a valid email
+          isEmail: true,
         },
       },
       password: {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      username: {
+        type: DataTypes.STRING,
+        allowNull: true, // ✅ make username optional
+      },
     },
     {
-      timestamps: true, // Enables automatic createdAt & updatedAt
-      tableName: "users", // Ensures table name is `users`, not `User`
-      freezeTableName: true, // Prevents Sequelize from pluralizing the table name
-      createdAt: "createdat", // Map Sequelize timestamps to lowercase columns
+      timestamps: true,
+      tableName: table,
+      freezeTableName: true,
+      createdAt: "createdat",
       updatedAt: "updatedat",
     }
   );
+
+  // ✅ Sync the model: creates table if not exists or alters if needed
+  User.sync({ alter: true }) // alter: true keeps existing data but updates schema
+    .then(() => {
+      console.log(`✅ Table "${table}" is ready.`);
+    })
+    .catch((err) => {
+      console.error(`❌ Error syncing "${table}" table:`, err);
+    });
+
+  return User;
 };
 
-module.exports = createSQLUserModel;
+export default createSQLUserModel;

@@ -1,5 +1,4 @@
-const mongoose = require("mongoose");
-
+import mongoose from "mongoose";
 const createMongoUserModel = (lookuptable) => {
   if (!mongoose.models[lookuptable]) {
     return mongoose.model(
@@ -11,4 +10,4 @@ const createMongoUserModel = (lookuptable) => {
   return mongoose.model(lookuptable);
 };
 
-module.exports = createMongoUserModel;
+export default createMongoUserModel;

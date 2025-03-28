@@ -1,8 +1,6 @@
-const mongoose = require("mongoose");
-const { Sequelize } = require("sequelize");
-const createMongoUserModel = require("../models/mongooseModel");
-const createSQLUserModel = require("../models/sequelizeModel");
-const { Pool } = require("pg");
+import { Sequelize } from "sequelize";
+import createMongoUserModel from "../models/mongooseModel.js";
+import createSQLUserModel from "../models/sequelizeModel.js";
 
 class DBService {
   static instance = null; // Static variable to store the singleton instance
@@ -16,7 +14,7 @@ class DBService {
     if (!dbInstance) throw new Error("dbInstance is required");
 
     this.dbInstance = dbInstance;
-    this.lookuptable = options?.lookuptable;
+    this.lookuptable = options?.lookuptable || this.dbInstance.lookuptable;
     this.dbtype = "";
     this.User = null;
     this.sequelize = null;
@@ -42,7 +40,7 @@ class DBService {
         this.dbtype = "mongo";
         this.User = createMongoUserModel(this.lookuptable);
       } else if (this.dbInstance?.config) {
-        console.log("✅ Connected to SQL Database:", this.dbInstance?.config);
+        console.log("✅ Connected to SQL Database:");
         this.dbtype = "sql";
         if (!this.dbInstance.dialect) {
           throw Error("Dialect is required");
@@ -54,13 +52,14 @@ class DBService {
           {
             host: this.dbInstance?.config?.host,
             dialect: this.dbInstance.dialect,
+            logging: false,
           }
         );
 
         await this.sequelize.authenticate(); // Ensure the connection is valid
         console.log("✅ Sequelize authenticated successfully");
 
-        this.User = createSQLUserModel(this.sequelize);
+        this.User = createSQLUserModel(this.sequelize, this.lookuptable);
       } else {
         throw new Error("Unsupported database type");
       }
@@ -77,4 +76,4 @@ class DBService {
   }
 }
 
-module.exports = DBService;
+export default DBService;

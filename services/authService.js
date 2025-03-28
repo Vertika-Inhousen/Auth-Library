@@ -1,7 +1,8 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { hashPassword, decryptPassword,encryptPassword } from "../utils.js";
-import fs from "fs";
+import { hashPassword, decryptPassword, encryptPassword } from "../utils.js";
+import { getPublicKey } from "../services/keymanager.js";
+
 const secret_key =
   "00c59c72478aa026294f74ad38e4adffbf49184370c806aa523c84b3f9ac926ebcdf454fb88b8ba73a07a4e3450d00d8e2a7405430544eb1dd2be17cc8486b5e";
 
@@ -19,12 +20,11 @@ export default class AuthService {
   async register(userData) {
     try {
       const { email, password } = userData;
-      const decryptedPassword = decryptPassword(password);
+      const decryptedPassword = await decryptPassword(password);
       //   Check for email and password
       if (!email || !password) {
         return { message: "Email and password are required", status: 400 };
       }
-
       let existingUser;
       // Check if user already exists
       if (this.dbtype === "mongo") {
@@ -81,7 +81,7 @@ export default class AuthService {
       if (!email || !password) {
         return { message: "Email and password are required", status: 400 };
       }
-      const decryptedPassword = decryptPassword(password);
+      const decryptedPassword = await decryptPassword(password);
       // Find user
       if (this.dbtype === "mongo") {
         user = await this.dbInstance.User.findOne({ email });
@@ -126,19 +126,16 @@ export default class AuthService {
       throw new Error(`Login Error - ${error.message}`);
     }
   }
-  async generatePublicKey() {
-    const publicKeyPem = fs.readFileSync("public.pem", "utf8");
-    return publicKeyPem;
-  }
-  async getEncryptedPassword(password, publicKeyPem) {
-    
-    if (!publicKeyPem) {
-      throw new Error("Public Key is required for encryption");
+
+  async getEncryptedPassword(password) {
+    const publicKey = await getPublicKey();
+    if (!publicKey) {
+      throw new Error("Public Key is missing");
     }
     if (!password) {
       throw new Error("Password is required for encryption");
     }
-    const encryptedPassword = encryptPassword(password, publicKeyPem);
+    const encryptedPassword = encryptPassword(password, publicKey);
     return encryptedPassword;
   }
 }
