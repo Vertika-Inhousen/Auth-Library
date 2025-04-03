@@ -68,7 +68,7 @@ app.get("/api/generatePem",async(req,res)=>{
 })
 
 app.get('/profile',auth.authenticate,async (req,res)=>{
-console.log('dtaa',req?.body)
+console.log('data',req)
 })
 app.get("/", (req, res) => {
   res.send("Welcome!");

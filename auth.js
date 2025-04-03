@@ -29,7 +29,7 @@ export default class AuthLibrary {
     await generateKeys(this.s3Data);
   }
   // Middleware for Authentication
-  async authenticate(req, res) {
+  async authenticate(req, res, next) {
     try {
       const { authorization } = req.headers;
       if (!authorization) {
@@ -41,7 +41,8 @@ export default class AuthLibrary {
       const token = authorization.split(" ")[1];
       const result = await verifyToken(token, this.config);
       if (result) {
-        return res.status(result?.status).json({ message: result?.message });
+        req.user = result;
+        next();
       }
     } catch (error) {
       console.error("Authentication Error:", error);
