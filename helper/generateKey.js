@@ -3,31 +3,12 @@ import forge from "node-forge";
 import crypto from "crypto";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import path from "path";
-import { createS3Client } from "../config/s3Config";
-loadLibraryEnv();
+// import { createS3Client } from "../config/s3Config";
 
-dotenv.config({
-  path: path.resolve(path.dirname(new URL(import.meta.url).pathname), "../.env"),
-});
 
-function validateEnv() {
-  const requiredEnv = [
-    "DO_SPACES_REGION",
-    "DO_SPACES_KEY",
-    "DO_SPACES_SECRET",
-    "DO_SPACES_BUCKET",
-  ];
-
-  for (const key of requiredEnv) {
-    if (!process.env[key]) {
-      console.error(`❌ Missing required environment variable: ${key}`);
-      process.exit(1);
-    }
-  }
-}
 const PASSPHRASE =
   "24da8cbd494a5b40d4ddc97dc604627d55553dbbb00350a7ea608cdb8590f2c8";function getPassphrase() {
-  return sssssPASSPHRASE || crypto.randomBytes(32).toString("hex");
+  return PASSPHRASE || crypto.randomBytes(32).toString("hex");
 }
 
 
@@ -61,9 +42,10 @@ async function uploadPemToSpaces(s3, filename, pemData) {
   console.log(`📦 Uploaded: pem/${filename}`);
 }
 
-async function run() {
+async function generateKeys(storage) {
   const passphrase = getPassphrase();
-  const s3 = createS3Client();
+  // const s3 = createS3Client();
+  const s3 = storage;
 
   console.log("🔐 Generating encrypted RSA key pair...");
 
@@ -82,8 +64,4 @@ async function run() {
     process.exit(1);
   }
 }
-
-// Only run if this file is executed directly
-if (process.argv[1] === new URL(import.meta.url).pathname) {
-  run();
-}
+ export default generateKeys;

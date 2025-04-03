@@ -2,25 +2,23 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { hashPassword, decryptPassword, encryptPassword } from "../utils.js";
 import { getPublicKey } from "../services/keymanager.js";
-
-const secret_key =
-  "00c59c72478aa026294f74ad38e4adffbf49184370c806aa523c84b3f9ac926ebcdf454fb88b8ba73a07a4e3450d00d8e2a7405430544eb1dd2be17cc8486b5e";
+import memjs from "memjs";
 
 export default class AuthService {
-  constructor(dbInstance, options) {
+  constructor(dbInstance, options, s3Data) {
     this.dbInstance = dbInstance;
     this.encryptPassword = options?.encryptPassword ?? true;
-    this.secret_key = process.env.JWT_SECRET || secret_key;
     this.saltRounds = options?.saltRounds ?? 10;
+    this.jwt_secret = options?.jwt_secret;
     (this.dbtype = dbInstance.dbtype),
-      (this.lookupTable = dbInstance?.lookupTable);
+      (this.lookupTable = dbInstance?.lookupTable),
+      (this.s3Data = s3Data);
   }
-
   //   Register Method
   async register(userData) {
     try {
       const { email, password } = userData;
-      const decryptedPassword = await decryptPassword(password);
+      const decryptedPassword = await decryptPassword(password, this.s3Data);
       //   Check for email and password
       if (!email || !password) {
         return { message: "Email and password are required", status: 400 };
@@ -81,7 +79,10 @@ export default class AuthService {
       if (!email || !password) {
         return { message: "Email and password are required", status: 400 };
       }
-      const decryptedPassword = await decryptPassword(password);
+      if (!this.s3Data) {
+        return { message: "S3 Credential is required", status: 400 };
+      }
+      const decryptedPassword = await decryptPassword(password, this.s3Data);
       // Find user
       if (this.dbtype === "mongo") {
         user = await this.dbInstance.User.findOne({ email });
@@ -104,10 +105,10 @@ export default class AuthService {
         delete user.password; // Remove password field
       }
       // Generate token
-      if (this.secret_key) {
+      if (this.jwt_secret) {
         const token = jwt.sign(
-          { id: user.id, email: user.email },
-          this.secret_key,
+          { id: user.id, email: user.email, username: user.username || "" },
+          this.jwt_secret,
           {
             expiresIn: "1h",
           }
@@ -120,6 +121,10 @@ export default class AuthService {
           },
           status: 200, // HTTP Status Code
         };
+      } else {
+        res
+          .status(400)
+          .json({ message: "Please provide a valid JWT secret key" });
       }
     } catch (error) {
       console.log("Error while login", error);
@@ -128,14 +133,14 @@ export default class AuthService {
   }
 
   async getEncryptedPassword(password) {
-    const publicKey = await getPublicKey();
+    const publicKey = await getPublicKey(this.s3Data);
     if (!publicKey) {
       throw new Error("Public Key is missing");
     }
     if (!password) {
       throw new Error("Password is required for encryption");
     }
-    const encryptedPassword = encryptPassword(password, publicKey);
+    const encryptedPassword = await encryptPassword(password, publicKey);
     return encryptedPassword;
   }
 }
