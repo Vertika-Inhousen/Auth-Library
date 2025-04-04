@@ -4,7 +4,7 @@ import generateKeys from "./helper/generateKey.js";
 import Config from "./config/config.js";
 import { verifyToken } from "./utils.js";
 
-export default class AuthLibrary {
+export default class Auth {
   constructor(dbInstance, options, s3Data) {
     this.dbInstance = DBService.getInstance(dbInstance, options); //Initate DB Service- Singleton instance Call
     this.authService = new AuthService(this.dbInstance, options, s3Data); //Initiate Auth Service

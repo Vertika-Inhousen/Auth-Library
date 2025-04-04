@@ -1,3 +1,3 @@
-import AuthLibrary from "./auth.js";
-export { AuthLibrary }; // Named export
-export default AuthLibrary; // Default export
+import Auth from "./auth.js";
+export { Auth }; // Named export
+export default Auth; // Default export

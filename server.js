@@ -1,7 +1,7 @@
 import express from "express";
 import bodyParser from "body-parser";
 import { connectDB, connectSQLDB } from "./db.js";
-import AuthLibrary from "./auth.js";
+import Auth from "./auth.js";
 import { createS3Client } from "./config/s3Config.js";
 
 const app = express();
@@ -18,7 +18,7 @@ const options = {
   jwt_secret:jwt_secret
 };
 // Initalise library
-const auth = new AuthLibrary(dbInstance, options,s3Data);
+const auth = new Auth(dbInstance, options,s3Data);
 
 // Sample Register API
 app.post("/api/register", async (req, res) => {
