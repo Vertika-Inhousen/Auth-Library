@@ -1,7 +1,6 @@
 import bcrypt from "bcryptjs";
 import forge from "node-forge";
 import { getPrivateKey } from "./services/keymanager.js";
-import memjs from "memjs";
 import jwt from "jsonwebtoken";
 
 export const hashPassword = async (password, saltRounds) => {
@@ -27,32 +26,115 @@ export const encryptPassword = async (password, key) => {
   });
   return forge.util.encode64(encryptedBytes);
 };
-export const verifyToken = async (token, config) => {
-  const memcached = memjs.Client.create(
-    process.env.MEMCACHED_URL || "localhost:11211"
-  );
-  // Verify Token using JWT
-  try {
-    // Check Memcached for cached token
-    const cachedUser = await memcached.get(token);
 
-    if (cachedUser.value) {
+export const verifyToken = async (token, config) => {
+  try {
+    const memcached = await config.getMemCacheClient();
+
+    if (!token) {
+      return { message: "No token provided", status: 400 };
+    }
+
+    // ✅ Check if token is blacklisted
+    const cachedValue = await new Promise((resolve, reject) => {
+      memcached.get(token, (err, data) => {
+        if (err) {
+          console.error("Memcached error:", err);
+          reject({ message: "Error checking token", status: 500 });
+        } else {
+          resolve(data ? data.toString().trim() : null); // ✅ Convert Buffer to String & Trim
+        }
+      });
+    });
+    if (cachedValue == "blacklisted") {
+      return { message: "Token is blacklisted", status: 401 };
+    }
+    // ✅ Check Memcached for cached valid token
+    const cachedUser = await new Promise((resolve, reject) => {
+      memcached.get(token, (err, data) => {
+        if (err) {
+          console.error("Memcached error:", err);
+          return reject({ message: "Error checking cache", status: 500 });
+        }
+        resolve(data ? JSON.parse(data) : null); // Parse only if valid JSON
+      });
+    });
+
+    if (cachedUser) {
       return {
         message: "Token is valid (cached)",
-        user: JSON.parse(cachedUser.value.toString()),
-        status:200
+        user: cachedUser,
+        status: 200,
       };
     }
-    // Get Secret
+
+    // ✅ Verify token with secret
     const secret = await config.getJwtSecret();
-    // Verify token
     const decoded = jwt.verify(token, secret);
 
-    // Cache token (expires in 1 hour)
-    await memcached.set(token, JSON.stringify(decoded), { expires: 3600 });
+    // ✅ Cache token (expires in 1 hour)
+    await new Promise((resolve, reject) => {
+      memcached.set(token, JSON.stringify(decoded), 3600, (err) => {
+        if (err) {
+          console.error("Memcached error:", err);
+          return reject({ message: "Error caching token", status: 500 });
+        }
+        resolve();
+      });
+    });
 
     return { message: "Token is valid", user: decoded, status: 200 };
   } catch (error) {
-    return {message: error,status:400};
+    console.error("User Authentication failed", error);
+    return { message: error?.message || "Invalid token", status: 400 };
+  }
+};
+
+export const destroyToken = async (token, config) => {
+  try {
+    const memcached = await config.getMemCacheClient();
+    const secret = await config.getJwtSecret();
+
+    if (!token) {
+      return { message: "No token provided", statusCode: 400 };
+    }
+
+    // ✅ Decode token to get expiration time
+    let decoded;
+    try {
+      decoded = jwt.verify(token, secret);
+    } catch (err) {
+      console.error("Invalid token:", err);
+      return { message: "Invalid token", statusCode: 400 };
+    }
+
+    const expTime = decoded.exp - Math.floor(Date.now() / 1000); // Remaining time
+
+    if (expTime <= 0) {
+      return { message: "Token already expired", statusCode: 400 };
+    }
+
+    const isBlacklisted = await new Promise((resolve, reject) => {
+      memcached.get(token, (err, data) => {
+        if (err) reject(err);
+        resolve(data ? data.toString().trim() : null);
+      });
+    });
+    console.log("Blacklisted token check:", isBlacklisted);
+
+    // ✅ Blacklist token by storing it in Memcached
+    return new Promise((resolve, reject) => {
+      memcached.set(token, "blacklisted", expTime, (memErr) => {
+        if (memErr) {
+          console.error("Memcached error:", memErr);
+          return reject({ message: "Error destroying token", statusCode: 500 });
+        }
+
+        resolve({ message: "Token destroyed successfully", statusCode: 200 });
+      });
+    });
+  } catch (error) {
+    console.error("Error logging out:", error);
+    return { message: "Error logging you out", err: error, statusCode: 500 };
   }
 };

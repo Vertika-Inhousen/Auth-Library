@@ -2,7 +2,7 @@ import DBService from "./services/dbService.js";
 import AuthService from "./services/authService.js";
 import generateKeys from "./helper/generateKey.js";
 import Config from "./config/config.js";
-import { verifyToken } from "./utils.js";
+import { destroyToken, verifyToken } from "./utils.js";
 
 export default class Auth {
   constructor(dbInstance, options, s3Data) {
@@ -10,6 +10,7 @@ export default class Auth {
     this.authService = new AuthService(this.dbInstance, options, s3Data); //Initiate Auth Service
     this.config = new Config(this.dbInstance, options, s3Data); //Initialize Config Service
     this.authenticate = this.authenticate.bind(this);
+    // this.logout= this.logout.bind(this)
   }
 
   //   Register Method
@@ -33,22 +34,38 @@ export default class Auth {
     try {
       const { authorization } = req.headers;
       if (!authorization) {
-        return res
-          .status(400)
-          .json({ message: "Access Denied. No token provided" });
+        return { message: "Access Denied. No token provided" };
       }
 
       const token = authorization.split(" ")[1];
       const result = await verifyToken(token, this.config);
       if (result) {
-        req.user = result;
+        req.user = {
+          data: result.user,
+          message: result?.message,
+          status: result?.status,
+        };
         next();
       }
     } catch (error) {
       console.error("Authentication Error:", error);
-      return res
-        .status(500)
-        .json({ message: "Error authenticating", error: error.message });
+      return { message: "Error authenticating", error: error.message };
+    }
+  }
+  // Logout method
+  async logout(authorization) {
+    try {
+      if (!authorization) {
+        return res
+          .status(400)
+          .json({ message: "Access Denied. No token provided" });
+      }
+      const token = authorization.split(" ")[1];
+      const response = await destroyToken(token, this.config);
+      return response;
+    } catch (error) {
+      console.error("Logout Error:", error);
+      return error;
     }
   }
 }

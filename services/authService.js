@@ -2,7 +2,6 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { hashPassword, decryptPassword, encryptPassword } from "../utils.js";
 import { getPublicKey } from "../services/keymanager.js";
-import memjs from "memjs";
 
 export default class AuthService {
   constructor(dbInstance, options, s3Data) {

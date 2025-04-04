@@ -3,6 +3,7 @@ import bodyParser from "body-parser";
 import { connectDB, connectSQLDB } from "./db.js";
 import Auth from "./auth.js";
 import { createS3Client } from "./config/s3Config.js";
+import memjs from "memjs";
 
 const app = express();
 app.use(bodyParser.json());
@@ -12,23 +13,27 @@ app.use(bodyParser.json());
 const dbInstance = await connectSQLDB();
 const s3Data = createS3Client();
 const jwt_secret = process.env.JWT_SECRET;
+const memcachehost = memjs.Client.create(
+  process.env.MEMCACHED_URL || "localhost:11211"
+);
 // Library Options
 const options = {
   lookuptable: "users",
-  jwt_secret:jwt_secret
+  jwt_secret: jwt_secret,
+  mem_cache_host: memcachehost,
 };
 // Initalise library
-const auth = new Auth(dbInstance, options,s3Data);
+const auth = new Auth(dbInstance, options, s3Data);
 
 // Sample Register API
 app.post("/api/register", async (req, res) => {
-  const { email, password,username } = req?.body;
+  const { email, password, username } = req?.body;
   try {
     const encryptedPassword = await auth.encryptPassword(password);
     const user = await auth.register({
       email: email,
       password: encryptedPassword,
-      username:username
+      username: username,
     });
     return res
       .status(user?.status)
@@ -57,19 +62,30 @@ app.post("/api/login", async (req, res) => {
   }
 });
 // Generate PEM Files
-app.get("/api/generatePem",async(req,res)=>{
-  try{
+app.get("/api/generatePem", async (req, res) => {
+  try {
     const pem = await auth.generatePem(storage);
-    return res.status(200).json({message:"PEM Files generated successfully"});
+    return res
+      .status(200)
+      .json({ message: "PEM Files generated successfully" });
+  } catch (error) {
+    console.log("Error generating pem files", error);
   }
-  catch(error){
-    console.log('Error generating pem files',error)
-  }
-})
+});
 
-app.get('/profile',auth.authenticate,async (req,res)=>{
-console.log('data',req)
-})
+app.get("/api/profile", auth.authenticate, async (req, res) => {
+  return res.status(200).json({data:req?.user})
+});
+app.post("/logout", async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    let response = await auth.logout(token);
+    return res.status(200).json({ message: response?.message, result: response });
+  } catch (Error) {
+    console.log("Error logging out user", Error);
+    return res.status(500).json({ message: Error.message });
+  }
+});
 app.get("/", (req, res) => {
   res.send("Welcome!");
 });
