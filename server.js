@@ -74,6 +74,7 @@ app.get("/api/generatePem", async (req, res) => {
 });
 
 app.get("/api/profile", auth.authenticate, async (req, res) => {
+  console.log('req',req?.body)
   return res.status(200).json({data:req?.user})
 });
 app.post("/logout", async (req, res) => {

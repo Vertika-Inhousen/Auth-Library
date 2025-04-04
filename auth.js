@@ -40,13 +40,19 @@ export default class Auth {
       const token = authorization.split(" ")[1];
       const result = await verifyToken(token, this.config);
       if (result) {
-        req.user = {
-          data: result.user,
-          message: result?.message,
-          status: result?.status,
-        };
-        next();
+        if(result.user){
+          req.user = {
+            data: result.user,
+            message: result?.message,
+            status: result?.status,
+          };
+        }
+        else{
+          req.user = {message:result,status:result?.status}
+        }
+       next();
       }
+    
     } catch (error) {
       console.error("Authentication Error:", error);
       return { message: "Error authenticating", error: error.message };
