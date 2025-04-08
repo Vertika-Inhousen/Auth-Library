@@ -2,7 +2,7 @@ import DBService from "./services/dbService.js";
 import AuthService from "./services/authService.js";
 import generateKeys from "./helper/generateKey.js";
 import Config from "./config/config.js";
-import { destroyToken, verifyToken } from "./utils.js";
+import { blacklistToken, verifyToken } from "./utils.js";
 
 export default class Auth {
   constructor(dbInstance, options, s3Data) {
@@ -10,7 +10,6 @@ export default class Auth {
     this.authService = new AuthService(this.dbInstance, options, s3Data); //Initiate Auth Service
     this.config = new Config(this.dbInstance, options, s3Data); //Initialize Config Service
     this.authenticate = this.authenticate.bind(this);
-    // this.logout= this.logout.bind(this)
   }
 
   //   Register Method
@@ -37,22 +36,24 @@ export default class Auth {
         return { message: "Access Denied. No token provided" };
       }
 
-      const token = authorization.split(" ")[1];
-      const result = await verifyToken(token, this.config);
+      const token = authorization.split(" ")[1]; // Extract token from header
+      const result = await verifyToken(token, this.config); // Verify token
       if (result) {
-        if(result.user){
+        if (result.user) {
           req.user = {
-            data: result.user,
+            data: result?.user||result,
             message: result?.message,
             status: result?.status,
           };
+        } else {
+          req.user = {
+            message: result?.message||result,
+            data: [],
+            status: result?.status,
+          };
         }
-        else{
-          req.user = {message:result,status:result?.status}
-        }
-       next();
+        next();
       }
-    
     } catch (error) {
       console.error("Authentication Error:", error);
       return { message: "Error authenticating", error: error.message };
@@ -67,7 +68,7 @@ export default class Auth {
           .json({ message: "Access Denied. No token provided" });
       }
       const token = authorization.split(" ")[1];
-      const response = await destroyToken(token, this.config);
+      const response = await blacklistToken(token, this.config); // Blacklist token
       return response;
     } catch (error) {
       console.error("Logout Error:", error);

@@ -4,6 +4,7 @@ import { connectDB, connectSQLDB } from "./db.js";
 import Auth from "./auth.js";
 import { createS3Client } from "./config/s3Config.js";
 import memjs from "memjs";
+import Redis from "ioredis";
 
 const app = express();
 app.use(bodyParser.json());
@@ -16,11 +17,16 @@ const jwt_secret = process.env.JWT_SECRET;
 const memcachehost = memjs.Client.create(
   process.env.MEMCACHED_URL || "localhost:11211"
 );
+const redis = new Redis("redis://localhost:6379");
+const validation_api = 'https://api.moodus.io/auth/validate-token?access_token='
+
 // Library Options
 const options = {
   lookuptable: "users",
-  jwt_secret: jwt_secret,
-  mem_cache_host: memcachehost,
+  // jwt_secret: jwt_secret,
+  // mem_cache_host: memcachehost,
+  redis_host:redis,
+  validation_api:validation_api
 };
 // Initalise library
 const auth = new Auth(dbInstance, options, s3Data);
@@ -74,14 +80,16 @@ app.get("/api/generatePem", async (req, res) => {
 });
 
 app.get("/api/profile", auth.authenticate, async (req, res) => {
-  console.log('req',req?.body)
-  return res.status(200).json({data:req?.user})
+  console.log("req", req?.body);
+  return res.status(200).json({ data: req?.user });
 });
 app.post("/logout", async (req, res) => {
   try {
     const token = req.headers.authorization;
     let response = await auth.logout(token);
-    return res.status(200).json({ message: response?.message, result: response });
+    return res
+      .status(200)
+      .json({ message: response?.message, result: response });
   } catch (Error) {
     console.log("Error logging out user", Error);
     return res.status(500).json({ message: Error.message });

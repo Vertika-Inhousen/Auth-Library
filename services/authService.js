@@ -74,7 +74,7 @@ export default class AuthService {
 
     try {
       let user;
-      //   Check for emial and password
+      //   Check for email and password
       if (!email || !password) {
         return { message: "Email and password are required", status: 400 };
       }
@@ -121,9 +121,10 @@ export default class AuthService {
           status: 200, // HTTP Status Code
         };
       } else {
-        res
-          .status(400)
-          .json({ message: "Please provide a valid JWT secret key" });
+        return {
+          message: "Please provide a valid JWT secret key",
+          status: 500,
+        };
       }
     } catch (error) {
       console.log("Error while login", error);
@@ -131,6 +132,7 @@ export default class AuthService {
     }
   }
 
+  // Encrypt Password
   async getEncryptedPassword(password) {
     const publicKey = await getPublicKey(this.s3Data);
     if (!publicKey) {
