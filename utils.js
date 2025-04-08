@@ -109,8 +109,6 @@ export const verifyToken = async (token, config) => {
     // ✅ Verify token (redis) create one if it doesn't exists
     if (redis_host) {
       const cachedValue = await redis_host.get(`${formatted_token}`);
-      console.log("cachedValue", cachedValue, formatted_token);
-      console.log("decoede", decoded, decoded?.email, cachedValue);
       if (cachedValue == null) {
         // ✅ Cache token (expires in 10 hours)
         try {
@@ -120,7 +118,6 @@ export const verifyToken = async (token, config) => {
             "EX",
             36000
           );
-          console.log("result>>>>>>", result);
           if (result == "OK") {
             return { message: "Token is valid", user: decoded, status: 200 };
           }
@@ -182,17 +179,12 @@ export const blacklistToken = async (token, config) => {
     } else {
       return { message: "Unable to verify token", status: 400 };
     }
-    console.log("decoded", decoded);
     let expiryTime = decoded?.exp ? decoded?.exp * 1000 : decoded?.expires;
-    console.log("IS data", expiryTime, new Date(expiryTime).toISOString());
     expiryTime = new Date(expiryTime).toISOString();
-    console.log("exp>>", expiryTime);
     const timestamp = Math.floor(new Date(expiryTime).getTime() / 1000); // Convert to seconds
-    console.log("timestamp", timestamp);
     const expTime = timestamp - Math.floor(Date.now() / 1000); // Remaining time
     let formatted_token = "AUTH_LIB_" + token;
     if (expTime <= 0) {
-      console.log("here>>>>>>>", expTime);
       return {
         message: "Token already expired",
         statusCode: 400,
