@@ -45,12 +45,14 @@ export default class Auth {
             message: result?.message,
             status: result?.status,
           };
+          res.status(result?.status)
         } else {
           req.user = {
             message: result?.message||result,
             data: [],
             status: result?.status,
           };
+          res.status(result?.status)
         }
         next();
       }
